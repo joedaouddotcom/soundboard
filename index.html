@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#09090F">
+  <title>Meme Soundboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rubik:wght@400;700;900&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    :root {
+      --bg:      #09090F;
+      --surface: #0F0F1C;
+      --border:  #1C1C32;
+      --text:    #EAEAFF;
+      --muted:   #4848A0;
+      --neon:    #FF3DFF;
+      --neon2:   #00FFCC;
+    }
+
+    html, body {
+      min-height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Rubik', sans-serif;
+      overscroll-behavior: none;
+      touch-action: manipulation;
+    }
+
+    /* Subtle scanline texture */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent 0px,
+        transparent 3px,
+        rgba(0, 0, 0, 0.035) 3px,
+        rgba(0, 0, 0, 0.035) 4px
+      );
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    /* ═══════════════════════════════════════════
+       SPLASH SCREEN
+    ═══════════════════════════════════════════ */
+
+    #splash {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 22px;
+      padding: 40px 32px;
+      z-index: 200;
+      background: var(--bg);
+      transition: opacity 0.55s cubic-bezier(0.4, 0, 0.2, 1),
+                  transform 0.55s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    #splash.out {
+      opacity: 0;
+      transform: scale(1.07);
+      pointer-events: none;
+    }
+
+    .splash-icon {
+      font-size: 68px;
+      line-height: 1;
+      animation: icon-float 2.8s ease-in-out infinite;
+      filter: drop-shadow(0 0 18px rgba(255, 61, 255, 0.55));
+    }
+
+    @keyframes icon-float {
+      0%, 100% { transform: translateY(0) rotate(-6deg); }
+      50%       { transform: translateY(-16px) rotate(6deg); }
+    }
+
+    /* Chromatic aberration title */
+    .splash-title-wrap {
+      text-align: center;
+      line-height: 0.88;
+    }
+
+    .splash-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(54px, 19vw, 92px);
+      letter-spacing: 3px;
+      color: var(--text);
+      /* RGB-shift via text-shadow — works correctly with line breaks */
+      text-shadow:
+        3px  1px 0 rgba(255, 0,   119, 0.30),
+       -3px -1px 0 rgba(0,  255, 204, 0.28);
+    }
+
+    .splash-title .accent {
+      color: var(--neon);
+      text-shadow:
+        3px  1px 0 rgba(255, 0,   119, 0.20),
+       -3px -1px 0 rgba(0,  255, 204, 0.20);
+    }
+
+    .splash-tagline {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    /* Progress */
+    .progress-wrap {
+      width: 100%;
+      max-width: 270px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .progress-track {
+      height: 3px;
+      background: var(--border);
+      border-radius: 2px;
+      overflow: visible;
+      position: relative;
+    }
+
+    #progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--neon), var(--neon2));
+      border-radius: 2px;
+      transition: width 0.35s ease;
+      position: relative;
+    }
+
+    #progress-fill::after {
+      content: '';
+      position: absolute;
+      right: -2px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 7px;
+      height: 7px;
+      background: #fff;
+      border-radius: 50%;
+      box-shadow: 0 0 10px var(--neon), 0 0 20px var(--neon);
+    }
+
+    #progress-label {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--muted);
+      letter-spacing: 3px;
+      text-align: center;
+      text-transform: uppercase;
+    }
+
+    /* Start button */
+    #start-btn {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 21px;
+      letter-spacing: 7px;
+      padding: 15px 44px;
+      background: transparent;
+      color: var(--neon);
+      border: 2px solid var(--neon);
+      border-radius: 1px;
+      cursor: pointer;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.4s ease, transform 0.4s ease,
+                  background 0.15s, box-shadow 0.15s;
+      pointer-events: none;
+    }
+
+    #start-btn.ready {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: all;
+      animation: btn-pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes btn-pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(255,61,255,0.4); }
+      50%       { box-shadow: 0 0 24px 6px rgba(255,61,255,0.15); }
+    }
+
+    #start-btn:active {
+      background: rgba(255, 61, 255, 0.12);
+      transform: scale(0.95) !important;
+    }
+
+
+    /* ═══════════════════════════════════════════
+       MAIN APP
+    ═══════════════════════════════════════════ */
+
+    #app {
+      display: none;
+      flex-direction: column;
+      min-height: 100svh;
+      padding: 16px 10px 40px;
+    }
+
+    #app.show { display: flex; }
+
+    .app-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      padding: 0 2px;
+    }
+
+    .app-logo {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+    }
+
+    .app-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 26px;
+      letter-spacing: 3px;
+      color: var(--text);
+    }
+
+    .app-title em {
+      font-style: normal;
+      color: var(--neon);
+    }
+
+    .app-badge {
+      font-size: 9px;
+      font-weight: 900;
+      color: var(--muted);
+      letter-spacing: 2px;
+      background: var(--border);
+      padding: 2px 6px;
+      border-radius: 2px;
+      white-space: nowrap;
+      transition: color 0.2s, background 0.2s;
+    }
+
+    .app-badge.playing-now {
+      color: #fff;
+      background: rgba(255, 61, 255, 0.25);
+    }
+
+    .stop-all {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 12px;
+      letter-spacing: 3px;
+      padding: 6px 11px;
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      cursor: pointer;
+      transition: color 0.2s, border-color 0.2s;
+    }
+
+    .stop-all.hot {
+      color: #FF5555;
+      border-color: #FF5555;
+    }
+
+
+    /* ═══════════════════════════════════════════
+       SOUND GRID
+    ═══════════════════════════════════════════ */
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    @media (min-width: 480px)  { .grid { grid-template-columns: repeat(4, 1fr); } }
+    @media (min-width: 660px)  { .grid { grid-template-columns: repeat(5, 1fr); } }
+    @media (min-width: 840px)  { .grid { grid-template-columns: repeat(6, 1fr); } }
+
+
+    /* ── Sound Button ── */
+
+    .snd {
+      position: relative;
+      border: none;
+      border-radius: 13px;
+      padding: 13px 6px 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      cursor: pointer;
+      min-height: 86px;
+      overflow: hidden;
+      touch-action: manipulation;
+      -webkit-user-select: none;
+      user-select: none;
+      transition: transform 0.13s cubic-bezier(0.34, 1.56, 0.64, 1),
+                  box-shadow 0.18s ease,
+                  opacity 0.2s;
+      /* entry animation */
+      animation: snd-in 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+    }
+
+    @keyframes snd-in {
+      from { opacity: 0; transform: scale(0.75) translateY(8px); }
+      to   { opacity: 1; transform: scale(1)    translateY(0);   }
+    }
+
+    /* Shine layer on tap */
+    .snd::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,0);
+      border-radius: 13px;
+      transition: background 0.08s;
+      pointer-events: none;
+    }
+
+    .snd:active::before { background: rgba(255,255,255,0.14); }
+
+    /* State: loading */
+    .snd[data-s="loading"] { opacity: 0.55; }
+    .snd[data-s="loading"]::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 13px;
+      border: 2px solid transparent;
+      border-top-color: rgba(255,255,255,0.55);
+      animation: spin 0.75s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* State: error */
+    .snd[data-s="error"] {
+      opacity: 0.22;
+      cursor: not-allowed;
+      filter: grayscale(0.6);
+    }
+
+    /* State: playing */
+    .snd[data-s="playing"] { transform: scale(1.055); }
+
+    /* Ripple */
+    .ripple {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.28);
+      transform: scale(0);
+      animation: ripple-out 0.42s cubic-bezier(0, 0.4, 0.5, 1) forwards;
+      pointer-events: none;
+    }
+
+    @keyframes ripple-out { to { transform: scale(3.5); opacity: 0; } }
+
+    /* Emoji */
+    .snd-emoji {
+      font-size: 25px;
+      line-height: 1;
+      pointer-events: none;
+      display: block;
+      transition: transform 0.12s;
+    }
+
+    .snd[data-s="playing"] .snd-emoji {
+      animation: emoji-vibe 0.35s ease-in-out infinite alternate;
+    }
+
+    @keyframes emoji-vibe {
+      from { transform: scale(1)    rotate(-6deg); }
+      to   { transform: scale(1.18) rotate(6deg);  }
+    }
+
+    /* Label */
+    .snd-label {
+      font-size: 9px;
+      font-weight: 700;
+      text-align: center;
+      line-height: 1.25;
+      pointer-events: none;
+      text-transform: uppercase;
+      letter-spacing: 0.2px;
+    }
+
+    /* Waveform bars (only visible when playing) */
+    .snd-bars {
+      display: flex;
+      gap: 2px;
+      align-items: flex-end;
+      height: 10px;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .snd[data-s="playing"] .snd-bars { opacity: 1; }
+
+    .snd-bars span {
+      display: block;
+      width: 2px;
+      background: currentColor;
+      border-radius: 1px;
+      animation: bar-dance 0.45s ease-in-out infinite alternate;
+    }
+
+    .snd-bars span:nth-child(1) { animation-delay: 0.00s; height: 3px; }
+    .snd-bars span:nth-child(2) { animation-delay: 0.10s; height: 8px; }
+    .snd-bars span:nth-child(3) { animation-delay: 0.20s; height: 4px; }
+    .snd-bars span:nth-child(4) { animation-delay: 0.30s; height: 9px; }
+    .snd-bars span:nth-child(5) { animation-delay: 0.40s; height: 2px; }
+
+    @keyframes bar-dance {
+      from { height: 2px;  }
+      to   { height: 10px; }
+    }
+
+    /* ── Footer ── */
+    .footer {
+      margin-top: 20px;
+      text-align: center;
+      font-size: 9px;
+      color: var(--muted);
+      letter-spacing: 3px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════ SPLASH ═══════════════════ -->
+<div id="splash">
+  <div class="splash-icon">🎵</div>
+
+  <div class="splash-title-wrap">
+    <div class="splash-title">MEME<br><span class="accent">SOUND</span>BOARD</div>
+  </div>
+
+  <div class="splash-tagline">28 sounds that broke the internet</div>
+
+  <div class="progress-wrap">
+    <div class="progress-track">
+      <div id="progress-fill"></div>
+    </div>
+    <div id="progress-label">INITIALIZING...</div>
+  </div>
+
+  <button id="start-btn" disabled>TAP TO START</button>
+</div>
+
+
+<!-- ═══════════════════ APP ═══════════════════════ -->
+<div id="app">
+  <div class="app-header">
+    <div class="app-logo">
+      <div class="app-title">MEME <em>SB</em></div>
+      <div class="app-badge" id="badge">25 SOUNDS</div>
+    </div>
+    <button class="stop-all" id="stop-all">■ STOP ALL</button>
+  </div>
+
+  <div class="grid" id="grid"></div>
+
+  <div class="footer">Tap to play &nbsp;·&nbsp; Tap again to stop</div>
+</div>
+
+
+<script>
+'use strict';
+
+/* ── Config ───────────────────────────────────────────────── */
+
+const CDN = 'https://cdn.jsdelivr.net/gh/3kh0/soundboard@main/sounds/';
+
+const SOUNDS = [
+  { id: 'vine-boom',    label: 'Vine Boom',           emoji: '💥', color: '#FF4757', file: 'vine-boom.mp3'         },
+  { id: 'bruh',         label: 'Bruh',                emoji: '😑', color: '#2ED573', file: 'bruh.mp3'              },
+  { id: 'airhorn',      label: 'Air Horn',            emoji: '📯', color: '#FFA502', file: 'airhorn.mp3'           },
+  { id: 'gta-wasted',   label: 'GTA Wasted',          emoji: '💀', color: '#57606F', file: 'gta5-wasted.mp3'      },
+  { id: 'oof',          label: 'Oof',                 emoji: '😬', color: '#FF6B81', file: 'oof.mp3'               },
+  { id: 'sus',          label: 'Sus',                 emoji: '🔴', color: '#D63031', file: 'imposter.mp3'          },
+  { id: 'win-error',    label: 'Windows Error',       emoji: '🪟', color: '#0984E3', file: 'WinError.mp3'          },
+  { id: 'skibidi',      label: 'Skibidi',             emoji: '🚽', color: '#A29BFE', file: 'explodingtoilet.mp3'   },
+  { id: 'its-corn',     label: "It's Corn!",          emoji: '🌽', color: '#F9CA24', file: 'itscorn.mp3'           },
+  { id: 'spongebob',    label: 'Few Moments Later',   emoji: '⏳', color: '#F0932B', file: 'afewmomentslater.mp3'  },
+  { id: 'to-be-cont',   label: 'To Be Continued',     emoji: '⏩', color: '#6AB04C', file: 'to-be-continued.mp3'  },
+  { id: 'coffin-dance', label: 'Coffin Dance',        emoji: '⚰️', color: '#341F97', file: 'coffin-dance.mp3'     },
+  { id: 'oh-no',        label: 'Oh No!',              emoji: '😱', color: '#EB4D4B', file: 'ohnoohnoohnonono.mp3'  },
+  { id: 'anime-wow',    label: 'Anime Wow',           emoji: '👀', color: '#00CEC9', file: 'anime-wow.mp3'         },
+  { id: 'emo-damage',   label: 'Emotional Damage',    emoji: '💔', color: '#FD79A8', file: 'emotional-damage.mp3'  },
+  { id: 'deez-nutz',    label: 'Deez Nuts',           emoji: '🥜', color: '#FDCB6E', file: 'deez-nutz.mp3'        },
+  { id: 'fbi',          label: 'FBI Open Up!',        emoji: '🚔', color: '#2C3E50', file: 'fbi-open-up.mp3'      },
+  { id: 'hog-rider',    label: 'HOG RIDER!',          emoji: '⚔️', color: '#E17055', file: 'hog-rider.mp3'        },
+  { id: 'bababooey',    label: 'Bababooey',           emoji: '🦣', color: '#6C5CE7', file: 'bababooey.mp3'         },
+  { id: 'badumtss',     label: 'Ba Dum Tss',          emoji: '🥁', color: '#E84393', file: 'badumtss.mp3'          },
+  { id: 'bonk',         label: 'Bonk',                emoji: '🔨', color: '#F368E0', file: 'bonk.mp3'              },
+  { id: 'fart',         label: 'Fart',                emoji: '💨', color: '#00B894', file: 'fart.mp3'              },
+  { id: 'metal-pipe',   label: 'Metal Pipe',          emoji: '🔩', color: '#7F8C8D', file: 'metalpipe.mp3'         },
+  { id: 'my-leg',       label: 'My Leg!',             emoji: '🦵', color: '#D35400', file: 'myleg.mp3'             },
+  { id: 'noot-noot',    label: 'Noot Noot',           emoji: '🐧', color: '#2980B9', file: 'nootnoot.mp3'          },
+  // ── Direct-URL sounds (no CDN; uses <audio> fallback for CORS-free playback) ──
+  { id: 'city-boy',    label: 'City Boy!',           emoji: '🏙️', color: '#00B4D8', url: 'https://www.myinstants.com/media/sounds/city-boy-city-boy-gravity-falls.mp3' },
+  { id: 'mega-night',  label: 'Mega Night',          emoji: '🌙', color: '#6A0572', url: 'https://www.myinstants.com/media/sounds/mega-night.mp3'                      },
+  { id: '6-7',         label: '6-7',                 emoji: '6️⃣', color: '#06D6A0', url: 'https://www.myinstants.com/media/sounds/doot-doot-6-7.mp3'                   },
+];
+
+/* ── State ────────────────────────────────────────────────── */
+
+let audioCtx  = null;
+const rawBufs  = {};      // ArrayBuffers from fetch (pre-gesture)
+const audBufs  = {};      // Decoded AudioBuffers (post-gesture)
+const htmlAudio = {};     // HTMLAudioElement fallback for non-CORS URLs
+const active   = {};      // id → BufferSourceNode | HTMLAudioElement
+
+let fetched  = 0;
+let playing  = 0;
+
+/* ── Utilities ────────────────────────────────────────────── */
+
+/** Returns a legible text color for a given hex background. */
+function contrast(hex) {
+  const r = parseInt(hex.slice(1,3), 16);
+  const g = parseInt(hex.slice(3,5), 16);
+  const b = parseInt(hex.slice(5,7), 16);
+  return (0.299*r + 0.587*g + 0.114*b) / 255 > 0.48
+    ? 'rgba(0,0,0,0.82)'
+    : 'rgba(255,255,255,0.9)';
+}
+
+function el(id) { return document.getElementById(id); }
+
+function setBtnState(id, state) {
+  const btn = el('snd-' + id);
+  if (!btn) return;
+  btn.dataset.s = state;
+
+  // Per-color glow when playing
+  const sound = SOUNDS.find(s => s.id === id);
+  if (state === 'playing' && sound) {
+    btn.style.boxShadow = `0 0 18px ${sound.color}CC, 0 0 36px ${sound.color}44`;
+  } else {
+    btn.style.boxShadow = '';
+  }
+}
+
+function setProgress(pct, label) {
+  el('progress-fill').style.width = pct + '%';
+  el('progress-label').textContent = label;
+}
+
+function updateBadge() {
+  const badge = el('badge');
+  const stopBtn = el('stop-all');
+  if (playing > 0) {
+    badge.textContent = `▶ ${playing} PLAYING`;
+    badge.classList.add('playing-now');
+    stopBtn.classList.add('hot');
+  } else {
+    badge.textContent = `${SOUNDS.length} SOUNDS`;
+    badge.classList.remove('playing-now');
+    stopBtn.classList.remove('hot');
+  }
+}
+
+/* ── Step 1: Prefetch audio as raw ArrayBuffers ───────────── */
+/*   No AudioContext needed — fetch works before user gesture  */
+
+async function prefetchAll() {
+  const jobs = SOUNDS.map(async (s) => {
+    if (s.url) {
+      // Direct-URL sound: CORS-blocked for fetch, so use HTMLAudioElement instead.
+      // The <audio> element can load cross-origin audio without CORS headers.
+      const a = new Audio();
+      a.preload = 'auto';
+      a.src = s.url;
+      htmlAudio[s.id] = a;
+    } else {
+      try {
+        const res = await fetch(CDN + s.file, { cache: 'force-cache' });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        rawBufs[s.id] = await res.arrayBuffer();
+      } catch {
+        rawBufs[s.id] = null;
+      }
+    }
+
+    fetched++;
+    const pct = Math.round(fetched / SOUNDS.length * 100);
+    setProgress(pct, `LOADING ${fetched} / ${SOUNDS.length}`);
+
+    // Enable start button after 60% loaded
+    if (fetched >= Math.ceil(SOUNDS.length * 0.6)) enableStart();
+  });
+
+  await Promise.allSettled(jobs);
+  enableStart();
+  setProgress(100, 'ALL LOADED — TAP TO BEGIN');
+}
+
+function enableStart() {
+  const btn = el('start-btn');
+  if (!btn.classList.contains('ready')) {
+    btn.classList.add('ready');
+    btn.disabled = false;
+  }
+}
+
+/* ── Step 2: User gesture → AudioContext + decode ─────────── */
+
+async function handleStart() {
+  const btn = el('start-btn');
+  btn.textContent  = 'DECODING...';
+  btn.disabled     = true;
+  btn.style.animation = 'none';
+
+  // Create AudioContext with lowest latency hint
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)({
+    latencyHint: 'interactive',
+  });
+
+  // iOS Safari: must resume after creation
+  if (audioCtx.state === 'suspended') await audioCtx.resume();
+
+  // Fully unlock by playing a zero-length silent buffer
+  const silBuf = audioCtx.createBuffer(1, 1, audioCtx.sampleRate);
+  const silSrc = audioCtx.createBufferSource();
+  silSrc.buffer = silBuf;
+  silSrc.connect(audioCtx.destination);
+  silSrc.start(0);
+
+  // Unlock HTMLAudioElement fallbacks on iOS (must happen inside a user-gesture handler).
+  // Mute → play → pause → unmute so nothing audible fires.
+  Object.values(htmlAudio).forEach((a) => {
+    a.muted = true;
+    a.play().then(() => { a.pause(); a.currentTime = 0; a.muted = false; }).catch(() => {});
+  });
+
+  // Decode all fetched buffers in parallel
+  await Promise.allSettled(
+    SOUNDS.map(async (s) => {
+      if (!rawBufs[s.id]) return;
+      try {
+        // decodeAudioData transfers (detaches) the ArrayBuffer in some engines;
+        // pass a clone so the original stays intact if we need it later.
+        audBufs[s.id] = await audioCtx.decodeAudioData(rawBufs[s.id].slice(0));
+      } catch {
+        audBufs[s.id] = null;
+      }
+    })
+  );
+
+  launchApp();
+}
+
+/* ── Step 3: Reveal soundboard ────────────────────────────── */
+
+function launchApp() {
+  // Update each button to its final state
+  SOUNDS.forEach((s, i) => {
+    const state = (audBufs[s.id] || htmlAudio[s.id]) ? 'ready' : 'error';
+    const btn = el('snd-' + s.id);
+    if (btn) {
+      btn.dataset.s = state;
+      btn.style.animationDelay = `${i * 28}ms`;
+    }
+  });
+
+  const splash = el('splash');
+  const app    = el('app');
+
+  splash.classList.add('out');
+  setTimeout(() => {
+    splash.style.display = 'none';
+    app.classList.add('show');
+  }, 580);
+}
+
+/* ── Playback ─────────────────────────────────────────────── */
+
+function toggleSound(id) {
+  if (active[id]) {
+    stopSound(id);
+  } else {
+    playSound(id);
+  }
+}
+
+function playSound(id) {
+  // ── HTMLAudioElement path (for direct-URL / non-CORS sounds) ──
+  if (htmlAudio[id]) {
+    const a = htmlAudio[id];
+    a.currentTime = 0;
+    a.play().catch(() => {});
+    active[id] = a;
+    setBtnState(id, 'playing');
+    playing++;
+    updateBadge();
+    a.onended = () => {
+      if (active[id] === a) {
+        delete active[id];
+        setBtnState(id, 'ready');
+        playing = Math.max(0, playing - 1);
+        updateBadge();
+      }
+    };
+    return;
+  }
+
+  // ── Web Audio API path (pre-decoded AudioBuffer, zero latency) ──
+  if (!audBufs[id] || !audioCtx) return;
+
+  const src = audioCtx.createBufferSource();
+  src.buffer = audBufs[id];
+  src.connect(audioCtx.destination);
+
+  src.onended = () => {
+    if (active[id] === src) {
+      delete active[id];
+      setBtnState(id, 'ready');
+      playing = Math.max(0, playing - 1);
+      updateBadge();
+    }
+  };
+
+  src.start(audioCtx.currentTime);
+  active[id] = src;
+  setBtnState(id, 'playing');
+  playing++;
+  updateBadge();
+}
+
+function stopSound(id) {
+  const src = active[id];
+  if (!src) return;
+
+  if (src instanceof HTMLAudioElement) {
+    src.pause();
+    src.currentTime = 0;
+  } else {
+    try { src.stop(); } catch {}
+  }
+
+  delete active[id];
+  setBtnState(id, 'ready');
+  playing = Math.max(0, playing - 1);
+  updateBadge();
+}
+
+function stopAll() {
+  Object.keys(active).forEach(stopSound);
+}
+
+/* ── Build grid ───────────────────────────────────────────── */
+
+function buildGrid() {
+  const grid = el('grid');
+
+  SOUNDS.forEach((s) => {
+    const tc  = contrast(s.color);           // text color
+    const bar = tc.includes('0,0,0')         // waveform bar color
+      ? 'rgba(0,0,0,0.45)'
+      : 'rgba(255,255,255,0.5)';
+
+    const btn = document.createElement('button');
+    btn.id        = 'snd-' + s.id;
+    btn.className = 'snd';
+    btn.dataset.s = 'loading';
+    btn.setAttribute('aria-label', s.label);
+    btn.style.background = s.color;
+
+    btn.innerHTML = `
+      <span class="snd-emoji">${s.emoji}</span>
+      <span class="snd-label" style="color:${tc}">${s.label}</span>
+      <span class="snd-bars" style="color:${bar}">
+        ${Array(5).fill('<span></span>').join('')}
+      </span>
+    `;
+
+    // ── Touch / click handler ──
+    // pointerdown fires earlier than click and works for both mouse and touch.
+    // preventDefault() stops ghost click generation on mobile.
+    btn.addEventListener('pointerdown', (e) => {
+      if (btn.dataset.s === 'loading' || btn.dataset.s === 'error') return;
+      e.preventDefault();
+
+      // Ripple effect
+      const rect   = btn.getBoundingClientRect();
+      const size   = Math.max(rect.width, rect.height) * 2.2;
+      const ripple = document.createElement('span');
+      ripple.className = 'ripple';
+      ripple.style.cssText = [
+        `width:${size}px`, `height:${size}px`,
+        `left:${e.clientX - rect.left - size / 2}px`,
+        `top:${e.clientY  - rect.top  - size / 2}px`,
+      ].join(';');
+      btn.appendChild(ripple);
+      ripple.addEventListener('animationend', () => ripple.remove(), { once: true });
+
+      toggleSound(s.id);
+    });
+
+    grid.appendChild(btn);
+  });
+}
+
+/* ── Boot ─────────────────────────────────────────────────── */
+
+buildGrid();
+prefetchAll();
+el('start-btn').addEventListener('click', handleStart);
+el('stop-all').addEventListener('click', stopAll);
+</script>
+</body>
+</html>
