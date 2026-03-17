@@ -446,6 +446,37 @@
       font-weight: 700;
       text-transform: uppercase;
     }
+
+    .footer a {
+      color: var(--neon);
+      text-decoration: none;
+      opacity: 0.75;
+      transition: opacity 0.2s;
+    }
+
+    .footer a:hover { opacity: 1; }
+
+    .splash-footer {
+      position: absolute;
+      bottom: 22px;
+      left: 0;
+      right: 0;
+      text-align: center;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .splash-footer a {
+      color: var(--neon);
+      text-decoration: none;
+      opacity: 0.75;
+      transition: opacity 0.2s;
+    }
+
+    .splash-footer a:hover { opacity: 1; }
   </style>
 </head>
 <body>
@@ -468,6 +499,8 @@
   </div>
 
   <button id="start-btn" disabled>TAP TO START</button>
+
+  <div class="splash-footer">© 2026 <a href="https://www.joedaoud.com" target="_blank" rel="noopener">joedaoud.com</a></div>
 </div>
 
 
@@ -483,7 +516,11 @@
 
   <div class="grid" id="grid"></div>
 
-  <div class="footer">Tap to play &nbsp;·&nbsp; Tap again to stop</div>
+  <div class="footer">
+    Tap to play &nbsp;·&nbsp; Tap again to stop
+    <br><br>
+    © 2026 <a href="https://www.joedaoud.com" target="_blank" rel="noopener">joedaoud.com</a>
+  </div>
 </div>
 
 
