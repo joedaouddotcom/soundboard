@@ -27,6 +27,7 @@
       --muted:   #4848A0;
       --neon:    #FF3DFF;
       --neon2:   #00FFCC;
+      --fart:    #A8E063;
     }
 
     html, body {
@@ -224,7 +225,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
       padding: 0 2px;
     }
 
@@ -281,6 +282,45 @@
       border-color: #FF5555;
     }
 
+    /* ── Tab Bar ── */
+
+    .tab-bar {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 12px;
+      padding: 0 2px;
+    }
+
+    .tab {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 14px;
+      letter-spacing: 3px;
+      padding: 9px 18px;
+      background: var(--surface);
+      color: var(--muted);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      cursor: pointer;
+      touch-action: manipulation;
+      transition: color 0.18s, border-color 0.18s, background 0.18s, transform 0.1s;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    .tab.active {
+      color: var(--text);
+      border-color: var(--neon);
+      background: rgba(255, 61, 255, 0.10);
+    }
+
+    /* Farts tab has its own accent color when active */
+    .tab.active[data-tab="farts"] {
+      border-color: var(--fart);
+      background: rgba(168, 224, 99, 0.10);
+      color: var(--fart);
+    }
+
+    .tab:active { transform: scale(0.95); }
 
     /* ═══════════════════════════════════════════
        SOUND GRID
@@ -489,7 +529,7 @@
     <div class="splash-title">MEME<br><span class="accent">SOUND</span>BOARD</div>
   </div>
 
-  <div class="splash-tagline">28 sounds that broke the internet</div>
+  <div class="splash-tagline">40 sounds that broke the internet</div>
 
   <div class="progress-wrap">
     <div class="progress-track">
@@ -514,7 +554,13 @@
     <button class="stop-all" id="stop-all">■ STOP ALL</button>
   </div>
 
-  <div class="grid" id="grid"></div>
+  <div class="tab-bar">
+    <button class="tab active" id="tab-sounds" data-tab="sounds">🔊 MEMES</button>
+    <button class="tab"        id="tab-farts"  data-tab="farts" >💨 FARTS</button>
+  </div>
+
+  <div class="grid" id="grid-sounds"></div>
+  <div class="grid" id="grid-farts"  style="display:none"></div>
 
   <div class="footer">
     Tap to play &nbsp;·&nbsp; Tap again to replay
@@ -557,11 +603,29 @@ const SOUNDS = [
   { id: 'metal-pipe',   label: 'Metal Pipe',          emoji: '🔩', color: '#7F8C8D', file: 'metalpipe.mp3'         },
   { id: 'my-leg',       label: 'My Leg!',             emoji: '🦵', color: '#D35400', file: 'myleg.mp3'             },
   { id: 'noot-noot',    label: 'Noot Noot',           emoji: '🐧', color: '#2980B9', file: 'nootnoot.mp3'          },
-  // ── Direct-URL sounds (no CDN; uses <audio> fallback for CORS-free playback) ──
-  { id: 'city-boy',    label: 'City Boy!',           emoji: '🏙️', color: '#00B4D8', url: 'https://www.myinstants.com/media/sounds/city-boy-city-boy-gravity-falls.mp3' },
-  { id: 'mega-night',  label: 'Mega Night',          emoji: '🌙', color: '#6A0572', url: 'https://www.myinstants.com/media/sounds/mega-night.mp3'                      },
-  { id: '6-7',         label: '6-7',                 emoji: '6️⃣', color: '#06D6A0', url: 'https://www.myinstants.com/media/sounds/doot-doot-6-7.mp3'                   },
+  // ── Direct-URL sounds ──
+  { id: 'city-boy',    label: 'City Boy!',   emoji: '🏙️', color: '#00B4D8', url: 'https://www.myinstants.com/media/sounds/city-boy-city-boy-gravity-falls.mp3' },
+  { id: 'mega-night',  label: 'Mega Night',  emoji: '🌙',  color: '#6A0572', url: 'https://www.myinstants.com/media/sounds/mega-night.mp3'                      },
+  { id: '6-7',         label: '6-7',         emoji: '6️⃣', color: '#06D6A0', url: 'https://www.myinstants.com/media/sounds/doot-doot-6-7.mp3'                   },
 ];
+
+const FART_SOUNDS = [
+  { id: 'f-classic',   label: 'Classic',      emoji: '💨', color: '#8B5E3C', url: 'https://www.myinstants.com/media/sounds/dry-fart.mp3'                         },
+  { id: 'f-perfect',   label: 'Perfect',      emoji: '🍑', color: '#C8782A', url: 'https://www.myinstants.com/media/sounds/perfect-fart.mp3'                     },
+  { id: 'f-wet',       label: 'Wet Fart',     emoji: '💦', color: '#3A7BD5', url: 'https://www.myinstants.com/media/sounds/wet-fart_1.mp3'                       },
+  { id: 'f-squeaky',   label: 'Squeaky',      emoji: '🐭', color: '#B8A800', url: 'https://www.myinstants.com/media/sounds/squeaky-fart.mp3'                     },
+  { id: 'f-epic',      label: 'Epic Fart',    emoji: '💥', color: '#C0392B', url: 'https://www.myinstants.com/media/sounds/kracc-bacc-fart-sound-effect.mp3'     },
+  { id: 'f-long',      label: 'Long Fart',    emoji: '📏', color: '#7D3C98', url: 'https://www.myinstants.com/media/sounds/long-fart_kzN3h6K.mp3'                },
+  { id: 'f-meme',      label: 'Fart Meme',    emoji: '🐸', color: '#27AE60', url: 'https://www.myinstants.com/media/sounds/fart-meme-sound.mp3'                  },
+  { id: 'f-cave',      label: 'Cave Fart',    emoji: '🏔️', color: '#5D6D7E', url: 'https://www.myinstants.com/media/sounds/fart-with-reverb.mp3'                 },
+  { id: 'f-echo',      label: 'Fart Echo',    emoji: '🌀', color: '#1A6FBF', url: 'https://www.myinstants.com/media/sounds/fart-with-reverb_NcgStsA.mp3'         },
+  { id: 'f-wet-meme',  label: 'Wet Meme',     emoji: '🧻', color: '#E67E22', url: 'https://www.myinstants.com/media/sounds/wet-fart-meme.mp3'                    },
+  { id: 'f-tiny',      label: 'Tiny Toot',    emoji: '🫧', color: '#2E86AB', url: 'https://www.myinstants.com/media/sounds/fart-toot.mp3'                        },
+  { id: 'f-movie',     label: 'Movie Fart',   emoji: '🎬', color: '#8E44AD', url: 'https://www.myinstants.com/media/sounds/fart-sound-effect_C1IXpeL.mp3'        },
+];
+
+// Single flat list used for prefetch / decode — IDs are unique across both tabs.
+const ALL_SOUNDS = [...SOUNDS, ...FART_SOUNDS];
 
 /* ── State ────────────────────────────────────────────────── */
 
@@ -572,8 +636,9 @@ const audBufs  = {};      // Decoded AudioBuffers (post-gesture)
 const htmlAudio = {};     // HTMLAudioElement fallback for non-CORS URLs
 const active   = {};      // id → BufferSourceNode | HTMLAudioElement
 
-let fetched  = 0;
-let playing  = 0;
+let fetched   = 0;
+let playing   = 0;
+let activeTab = 'sounds'; // 'sounds' | 'farts'
 
 /* ── Utilities ────────────────────────────────────────────── */
 
@@ -594,8 +659,8 @@ function setBtnState(id, state) {
   if (!btn) return;
   btn.dataset.s = state;
 
-  // Per-color glow when playing
-  const sound = SOUNDS.find(s => s.id === id);
+  // Per-color glow when playing — search the full sound list
+  const sound = ALL_SOUNDS.find(s => s.id === id);
   if (state === 'playing' && sound) {
     btn.style.boxShadow = `0 0 18px ${sound.color}CC, 0 0 36px ${sound.color}44`;
   } else {
@@ -609,27 +674,41 @@ function setProgress(pct, label) {
 }
 
 function updateBadge() {
-  const badge = el('badge');
+  const badge   = el('badge');
   const stopBtn = el('stop-all');
+  const tabList = activeTab === 'sounds' ? SOUNDS : FART_SOUNDS;
   if (playing > 0) {
     badge.textContent = `▶ ${playing} PLAYING`;
     badge.classList.add('playing-now');
     stopBtn.classList.add('hot');
   } else {
-    badge.textContent = `${SOUNDS.length} SOUNDS`;
+    badge.textContent = `${tabList.length} SOUNDS`;
     badge.classList.remove('playing-now');
     stopBtn.classList.remove('hot');
   }
+}
+
+/* ── Tab switching ────────────────────────────────────────── */
+
+function switchTab(tab) {
+  activeTab = tab;
+
+  el('tab-sounds').classList.toggle('active', tab === 'sounds');
+  el('tab-farts').classList.toggle('active',  tab === 'farts');
+
+  el('grid-sounds').style.display = tab === 'sounds' ? '' : 'none';
+  el('grid-farts').style.display  = tab === 'farts'  ? '' : 'none';
+
+  updateBadge();
 }
 
 /* ── Step 1: Prefetch audio as raw ArrayBuffers ───────────── */
 /*   No AudioContext needed — fetch works before user gesture  */
 
 async function prefetchAll() {
-  const jobs = SOUNDS.map(async (s) => {
+  const jobs = ALL_SOUNDS.map(async (s) => {
     if (s.url) {
       // Direct-URL sound: CORS-blocked for fetch, so use HTMLAudioElement instead.
-      // The <audio> element can load cross-origin audio without CORS headers.
       const a = new Audio();
       a.preload = 'auto';
       a.src = s.url;
@@ -645,11 +724,11 @@ async function prefetchAll() {
     }
 
     fetched++;
-    const pct = Math.round(fetched / SOUNDS.length * 100);
-    setProgress(pct, `LOADING ${fetched} / ${SOUNDS.length}`);
+    const pct = Math.round(fetched / ALL_SOUNDS.length * 100);
+    setProgress(pct, `LOADING ${fetched} / ${ALL_SOUNDS.length}`);
 
     // Enable start button after 60% loaded
-    if (fetched >= Math.ceil(SOUNDS.length * 0.6)) enableStart();
+    if (fetched >= Math.ceil(ALL_SOUNDS.length * 0.6)) enableStart();
   });
 
   await Promise.allSettled(jobs);
@@ -688,11 +767,11 @@ async function handleStart() {
   masterGain.gain.value = 0.75;
 
   const compressor = audioCtx.createDynamicsCompressor();
-  compressor.threshold.value = -18;  // dB — starts limiting above this
-  compressor.knee.value      =  6;   // dB — soft knee for transparent sound
-  compressor.ratio.value     = 12;   // heavy limiting above threshold
+  compressor.threshold.value = -18;   // dB — starts limiting above this
+  compressor.knee.value      =  6;    // dB — soft knee for transparent sound
+  compressor.ratio.value     = 12;    // heavy limiting above threshold
   compressor.attack.value    = 0.003; // 3ms — fast enough to catch transients
-  compressor.release.value   = 0.18; // 180ms — avoids pumping artefacts
+  compressor.release.value   = 0.18;  // 180ms — avoids pumping artefacts
 
   masterGain.connect(compressor);
   compressor.connect(audioCtx.destination);
@@ -711,9 +790,9 @@ async function handleStart() {
     a.play().then(() => { a.pause(); a.currentTime = 0; a.muted = false; }).catch(() => {});
   });
 
-  // Decode all fetched buffers in parallel
+  // Decode all fetched CDN buffers in parallel
   await Promise.allSettled(
-    SOUNDS.map(async (s) => {
+    ALL_SOUNDS.map(async (s) => {
       if (!rawBufs[s.id]) return;
       try {
         // decodeAudioData transfers (detaches) the ArrayBuffer in some engines;
@@ -728,7 +807,7 @@ async function handleStart() {
   // For any CDN sound that failed Web Audio decode (e.g. airhorn on iOS),
   // fall back to HTMLAudioElement — it plays anything the browser supports
   // without needing CORS or a decoded buffer.
-  SOUNDS.forEach((s) => {
+  ALL_SOUNDS.forEach((s) => {
     if (!s.url && !audBufs[s.id]) {
       const a = new Audio();
       a.preload = 'auto';
@@ -746,8 +825,8 @@ async function handleStart() {
 /* ── Step 3: Reveal soundboard ────────────────────────────── */
 
 function launchApp() {
-  // Update each button to its final state
-  SOUNDS.forEach((s, i) => {
+  // Update every button across both grids to its final state
+  ALL_SOUNDS.forEach((s, i) => {
     const state = (audBufs[s.id] || htmlAudio[s.id]) ? 'ready' : 'error';
     const btn = el('snd-' + s.id);
     if (btn) {
@@ -756,7 +835,7 @@ function launchApp() {
     }
   });
 
-  updateBadge();  // sync count now that SOUNDS.length is known
+  updateBadge(); // sync count for active tab
 
   const splash = el('splash');
   const app    = el('app');
@@ -771,8 +850,8 @@ function launchApp() {
 /* ── Playback ─────────────────────────────────────────────── */
 
 function playSound(id) {
-  // If this sound is already playing, stop the current instance silently
-  // before restarting — gives instant replay on every tap.
+  // If already playing, stop the current instance silently then restart
+  // immediately — gives instant replay on every tap.
   if (active[id]) {
     const prev = active[id];
     if (prev instanceof HTMLAudioElement) {
@@ -812,7 +891,7 @@ function playSound(id) {
 
   const src = audioCtx.createBufferSource();
   src.buffer = audBufs[id];
-  src.connect(masterGain);   // → masterGain → compressor → destination
+  src.connect(masterGain); // → masterGain → compressor → destination
 
   src.onended = () => {
     if (active[id] === src) {
@@ -853,10 +932,11 @@ function stopAll() {
 
 /* ── Build grid ───────────────────────────────────────────── */
 
-function buildGrid() {
-  const grid = el('grid');
+/** Renders sound buttons for the given sounds array into the given grid element. */
+function buildGrid(sounds, gridId) {
+  const grid = el(gridId);
 
-  SOUNDS.forEach((s) => {
+  sounds.forEach((s) => {
     const tc  = contrast(s.color);           // text color
     const bar = tc.includes('0,0,0')         // waveform bar color
       ? 'rgba(0,0,0,0.45)'
@@ -877,7 +957,6 @@ function buildGrid() {
       </span>
     `;
 
-    // ── Touch / click handler ──
     // pointerdown fires earlier than click and works for both mouse and touch.
     // preventDefault() stops ghost click generation on mobile.
     btn.addEventListener('pointerdown', (e) => {
@@ -906,10 +985,14 @@ function buildGrid() {
 
 /* ── Boot ─────────────────────────────────────────────────── */
 
-buildGrid();
+buildGrid(SOUNDS,      'grid-sounds');
+buildGrid(FART_SOUNDS, 'grid-farts');
 prefetchAll();
+
 el('start-btn').addEventListener('click', handleStart);
 el('stop-all').addEventListener('click', stopAll);
+el('tab-sounds').addEventListener('pointerdown', () => switchTab('sounds'));
+el('tab-farts').addEventListener('pointerdown',  () => switchTab('farts'));
 </script>
 </body>
 </html>
